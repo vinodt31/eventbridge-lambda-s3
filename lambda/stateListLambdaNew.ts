@@ -27,7 +27,7 @@ export const handler = async () => {
         // Prepare upload parameters
         const params = {
             Bucket: BUCKET_NAME,
-            Key: 'stateList.json',
+            Key: 'postComment.json',
             Body: JSON.stringify(stateList),
             ContentType: 'application/json',
         };

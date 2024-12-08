@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
-
 export class EventbridgeLambdaS3Stack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -24,9 +23,9 @@ export class EventbridgeLambdaS3Stack extends cdk.Stack {
       entry: path.join(__dirname, '../lambda/stateListLambda.ts'),
       handler: 'handler',
       environment: {
-          BUCKET_NAME: bucket.bucketName,
+        BUCKET_NAME: bucket.bucketName,
       },
-  });
+    });
 
     // Grant the Lambda function permissions to write to the S3 bucket
     bucket.grantWrite(lambdaFunction);
@@ -37,12 +36,35 @@ export class EventbridgeLambdaS3Stack extends cdk.Stack {
       resources: [`${bucket.bucketArn}/*`], // Allow write access to all objects in the bucket
     }));
 
-    // EventBridge rule to trigger Lambda every hour
+    // EventBridge rule to trigger Lambda every 10 hours
     new events.Rule(this, 'HourlyTrigger', {
-      //schedule: events.Schedule.rate(cdk.Duration.hours(1)),
-      schedule: events.Schedule.rate(cdk.Duration.minutes(10)),
+      schedule: events.Schedule.rate(cdk.Duration.hours(1)),
       targets: [new targets.LambdaFunction(lambdaFunction)],
+    });
+
+    // Create second Lambda function
+    const lambdaFunctionNew = new lambdaNodejs.NodejsFunction(this, 'StateListFunctionNew', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: path.join(__dirname, '../lambda/stateListLambdaNew.ts'), // Use different logic here if needed
+      handler: 'handler',
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+      },
+    });
+
+    // Grant the second Lambda function permissions to write to the S3 bucket
+    bucket.grantWrite(lambdaFunctionNew);
+
+    // Add debugging policy
+    lambdaFunctionNew.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['s3:PutObject'],
+      resources: [`${bucket.bucketArn}/*`],
+    }));
+
+    // EventBridge rule for the second Lambda
+    new events.Rule(this, 'HourlyTriggerNew', {
+      schedule: events.Schedule.rate(cdk.Duration.hours(1)), // Different schedule if needed
+      targets: [new targets.LambdaFunction(lambdaFunctionNew)],
     });
   }
 }
-
