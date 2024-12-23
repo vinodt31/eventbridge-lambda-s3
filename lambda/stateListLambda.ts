@@ -15,10 +15,13 @@ if (!BUCKET_NAME) {
 // Create an S3 client
 const s3Client = new S3Client({ region: REGION });
 
-export const handler = async () => {
+export const handler = async (event: any, context: any) => {
     try {
         console.log('Bucket Name:', BUCKET_NAME);
         console.log('AWS Region:', REGION);
+        console.log("event : ",event);
+        console.log('context:', context);
+        console.log('RequestId:', context.awsRequestId);
 
         // Fetch data from API
         const response = await axios.get('https://jsonplaceholder.typicode.com/posts/1/comments');
